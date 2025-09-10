@@ -1,10 +1,7 @@
 #include "io_uring_queue_init.h"
 #include <fcntl.h>
-#include <iostream>
-#include <fstream>
-#include <regex>
-#include <cstring>
-#include <filesystem>
+#include <list>
+#include <type_traits>
 
 
 namespace foelsche
@@ -13,6 +10,29 @@ namespace linux
 {
 namespace
 {
+template<typename T>
+struct new_delete
+{
+	using TrivialClone = std::aligned_storage_t<sizeof(T), alignof(T)>;
+	static std::list<TrivialClone> s_sFree, s_sUsed;
+	static void* alloc(void)
+	{	if (s_sFree.empty())
+			s_sFree.emplace_front();
+		s_sUsed.splice(s_sUsed.begin(), s_sFree, s_sFree.begin());
+		return &s_sUsed.front();
+	}
+	static void free(void* const _p)
+	{	for (auto p = s_sUsed.begin(); p != s_sUsed.end(); ++p)
+			if (&*p == _p)
+			{	s_sFree.splice(s_sFree.begin(), s_sUsed, s_sUsed.begin());
+				break;
+			}
+	}
+};
+template<typename T>
+std::list<typename new_delete<T>::TrivialClone> new_delete<T>::s_sFree;
+template<typename T>
+std::list<typename new_delete<T>::TrivialClone> new_delete<T>::s_sUsed;
 	/// a read request (from file)
 struct io_data_read:io_data
 {	//const std::shared_ptr<io_data_created_buffer> m_sBuffer;
@@ -64,18 +84,15 @@ struct io_data_read:io_data
 	virtual std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const , ::io_uring_cqe* const)> getRead(void) override
 	{	return std::move(m_sRead);
 	}
-#if 0
-	{	auto p = m_sBuffer->m_s.begin(), pEnd = m_sBuffer->m_s.end(), pLast = p;
-		for (; p != pEnd; ++p)
-			if (*p == '\n')
-			{	std::reverse(pLast, p);
-				pLast = p + 1;
-			}
-		_pRing->createWrite(
-		);
-	}
-#endif
+	static void* operator new(std::size_t size);
+	static void operator delete(void* ptr);
 };
+void* io_data_read::operator new(std::size_t)
+{	return new_delete<io_data_read>::alloc();
+}
+void io_data_read::operator delete(void* const _p)
+{	return new_delete<io_data_read>::free(_p);
+}
 	/// a receive request (from socket)
 struct io_data_write:io_data
 {	std::vector<char> m_sBuffer;
@@ -131,24 +148,15 @@ struct io_data_write:io_data
 	virtual std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const , ::io_uring_cqe* const)> getRead(void) override
 	{	return nullptr;
 	}
-#if 0
-	{	const auto iOffset = m_sBuffer->m_iOffset;
-		std::cerr << "write request finished " << cqe->res << std::endl;
-		if (iOffset + cqe->res < m_sBuffer->m_s.size())
-		{	std::cerr << "scheduling missing write for missing data of " << m_sBuffer->m_s.size() - iOffset + cqe->res << std::endl;
-			m_sBuffer->m_iOffset += cqe->res;
-			ring->createWrite(
-				std::dynamic_pointer_cast<io_data_created_fd>(m_sData),
-				m_sBuffer
-			);
-		}
-		else
-		{	std::cerr << "scheduling read" << std::endl;
-			ring->createRecv(std::dynamic_pointer_cast<io_data_created_fd>(m_sData), std::make_shared<io_data_created_buffer>(std::vector<char>(BUFFER_SIZE), 0));
-		}
-	}
-#endif
+	static void* operator new(std::size_t size);
+	static void operator delete(void* ptr);
 };
+void* io_data_write::operator new(std::size_t)
+{	return new_delete<io_data_write>::alloc();
+}
+void io_data_write::operator delete(void* const _p)
+{	return new_delete<io_data_write>::free(_p);
+}
 }
 	/// create an read request
 std::shared_ptr<io_data> io_uring_queue_init::createRead(
