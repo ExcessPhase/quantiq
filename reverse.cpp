@@ -20,7 +20,7 @@ static constexpr const std::size_t BUFFER_SIZE = 16384;
 	/// blocking
 	/// only serves maximally 8 events
 static void event_loop(io_uring_queue_init* const ring)
-{	while (true)
+{	while (!ring->m_sIoData.empty())
 	{	io_uring_wait_cqe sCQE(&ring->m_sRing);
 		if (sCQE.m_pCQE->res < 0)
 			std::cerr << "Async operation failed: " << std::strerror(-sCQE.m_pCQE->res) << std::endl;
@@ -47,7 +47,7 @@ int main(int, char**argv)
 	fcntl(sWrite.m_i, F_SETFL, fcntl(sWrite.m_i, F_GETFL, 0) | O_NONBLOCK);
 	std::vector<char> sLeftOver, sBuffer;
 	std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const, ::io_uring_cqe* const)> sReadF;
-	const std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const, ::io_uring_cqe* const)> sWriteF = [&](io_data&_r, foelsche::linux::io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE)
+	const std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const, ::io_uring_cqe* const, bool)> sWriteF = [&](io_data&_r, foelsche::linux::io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE, bool)
 	{	
 		if (_r.getOffset() + _pCQE->res < _r.getBuffer().size())
 			_pRing->createWrite(
@@ -55,14 +55,15 @@ int main(int, char**argv)
 				std::move(_r.getBuffer()),
 				std::move(_r.getBuffer2()),
 				_r.getOffset() + _pCQE->res,
-				_r.getWrite()
+				//_r.getWrite()
+				std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const, ::io_uring_cqe* const, bool)>(sWriteF)
 			);
 		else
 			_pRing->createRead(
 				sRead.m_i,
 				std::move(_r.getBuffer2()),
 				std::move(_r.getBuffer()),
-				_r.getRead()
+				std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const, ::io_uring_cqe* const)>(sReadF)
 			);
 	};
 	sReadF = [&](io_data&_r, foelsche::linux::io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE)
@@ -82,7 +83,7 @@ int main(int, char**argv)
 			std::move(_r.getBuffer()),
 			std::move(_r.getBuffer2()),
 			0,
-			_r.getWrite()
+			std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const, ::io_uring_cqe* const, bool)>(sWriteF)
 		);
 	};
 	

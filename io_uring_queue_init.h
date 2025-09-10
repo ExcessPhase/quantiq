@@ -47,14 +47,14 @@ struct io_uring_queue_init
 		int _iFD,
 		std::vector<char> &&_rBuffer,
 		std::vector<char> &&_rBuffer2,
-		std::function<void(io_data&, io_uring_queue_init*const , ::io_uring_cqe* const)>&&_rWrite
+		std::function<void(io_data&, io_uring_queue_init*const , ::io_uring_cqe* const)>&&_rRead
 	);
 	std::shared_ptr<io_data> createWrite(
 		int _iFD,
 		std::vector<char> &&_rBuffer,
 		std::vector<char> &&_rBuffer2,
 		std::size_t,
-		std::function<void(io_data&, io_uring_queue_init*const , ::io_uring_cqe* const)>&&_rWrite
+		std::function<void(io_data&, io_uring_queue_init*const , ::io_uring_cqe* const, bool)>&&_rWrite
 	);
 };
 }

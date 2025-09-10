@@ -24,7 +24,7 @@ struct io_data:std::enable_shared_from_this<io_data>
 	virtual std::vector<char> &getBuffer2(void) = 0;
 	virtual int getFD(void) = 0;
 	virtual std::size_t getOffset(void) = 0;
-	virtual std::function<void(io_data&, io_uring_queue_init*const , ::io_uring_cqe* const)> getWrite(void) = 0;
+	virtual std::function<void(io_data&, io_uring_queue_init*const , ::io_uring_cqe* const, bool)> getWrite(void) = 0;
 	virtual std::function<void(io_data&, io_uring_queue_init*const , ::io_uring_cqe* const)> getRead(void) = 0;
 };
 }
