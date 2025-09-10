@@ -43,9 +43,9 @@ int main(int, char**argv)
 		/// RAII initialize and destroy a socket
 	foelsche::linux::open sRead(argv[1], O_RDONLY);
 	fcntl(sRead.m_i, F_SETFL, fcntl(sRead.m_i, F_GETFL, 0) | O_NONBLOCK);
-	foelsche::linux::open sWrite(argv[2], O_WRONLY);
+	foelsche::linux::open sWrite(argv[2], O_WRONLY | O_CREAT | O_TRUNC, 00600);
 	fcntl(sWrite.m_i, F_SETFL, fcntl(sWrite.m_i, F_GETFL, 0) | O_NONBLOCK);
-	std::vector<char> sLeftOver(1024*16), sBuffer(1024*16);
+	std::vector<char> sLeftOver, sBuffer;
 	std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const, ::io_uring_cqe* const)> sReadF;
 	const std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const, ::io_uring_cqe* const)> sWriteF = [&](io_data&_r, foelsche::linux::io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE)
 	{	
@@ -66,7 +66,9 @@ int main(int, char**argv)
 			);
 	};
 	sReadF = [&](io_data&_r, foelsche::linux::io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE)
-	{	_r.getBuffer().resize(_pCQE->res);
+	{	if (!_pCQE->res)
+			return;
+		_r.getBuffer().resize(_pCQE->res);
 		auto p = _r.getBuffer().begin(), pEnd = _r.getBuffer().end(), pLast = p;
 		for (; p != pEnd; ++p)
 			if (*p == '\n')

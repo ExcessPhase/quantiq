@@ -13,8 +13,8 @@ namespace linux
 	/// an RAII wrapper for socket()/close()
 struct open
 {	const int m_i;
-	open(const char*const _pFileName, const int _iFlags)
-		:m_i(::open(_pFileName, _iFlags))
+	open(const char*const _pFileName, const int _iFlags, const int _iPerm = 0)
+		:m_i(::open(_pFileName, _iFlags, _iPerm))
 	{	if (m_i == -1)
 			throw std::system_error(std::error_code(errno, std::generic_category()), "open() failed!");
 	}
