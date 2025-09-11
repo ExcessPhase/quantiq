@@ -44,8 +44,7 @@ int main(int, char**argv)
 	std::vector<char> sLeftOver, sBuffer;
 	std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const, ::io_uring_cqe* const)> sReadF;
 	const std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const, ::io_uring_cqe* const, bool)> sWriteF = [&](io_data&_r, foelsche::linux::io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE, bool)
-	{	
-		if (_r.getOffset() + _pCQE->res < _r.getBuffer().size())
+	{	if (_r.getOffset() + _pCQE->res < _r.getBuffer().size())
 			_pRing->createWrite(
 				sWrite.m_i,
 				std::move(_r.getBuffer()),
@@ -65,7 +64,7 @@ int main(int, char**argv)
 	sReadF = [&](io_data&_r, foelsche::linux::io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE)
 	{	if (!_pCQE->res)
 			return;
-		_r.getBuffer().resize(_pCQE->res);
+		_r.getBuffer().resize(_r.getOffset() + _pCQE->res);
 		auto p = _r.getBuffer().begin(), pEnd = _r.getBuffer().end(), pLast = p;
 		for (; p != pEnd; ++p)
 			if (*p == '\n')

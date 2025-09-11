@@ -2,6 +2,7 @@
 #include <fcntl.h>
 #include <list>
 #include <type_traits>
+#include <iostream>
 
 
 namespace foelsche
@@ -40,6 +41,7 @@ struct io_data_read:io_data
 	std::vector<char> m_sBuffer2;
 	std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const , ::io_uring_cqe* const)> m_sRead;
 	const int m_iFD;
+	const std::size_t m_iOffset;
 
 	io_data_read(
 		foelsche::linux::io_uring_queue_init *const _pRing,
@@ -52,14 +54,15 @@ struct io_data_read:io_data
 		m_sBuffer(std::move(_rBuffer)),
 		m_sBuffer2(std::move(_rBuffer2)),
 		m_sRead(std::move(_rRead)),
-		m_iFD(_iFD)
+		m_iFD(_iFD),
+		m_iOffset(m_sBuffer.size())
 	{	//const auto sFD = std::dynamic_pointer_cast<io_data_created_fd>(m_sData);
 		//fcntl(sFD->m_iID, F_SETFL, fcntl(sFD->m_iID, F_GETFL, 0) | O_NONBLOCK);
 		io_uring_sqe* const sqe = io_uring_queue_init::io_uring_get_sqe(&_pRing->m_sRing);
 		sqe->user_data = reinterpret_cast<uintptr_t>(this);
-		const auto iOffset = m_sBuffer.size();
-		m_sBuffer.resize(iOffset + 16*1024);
-		io_uring_prep_read(sqe, m_iFD, m_sBuffer.data() + iOffset, m_sBuffer.size() - iOffset, -1);
+		//const auto iOffset = m_sBuffer.size();
+		m_sBuffer.resize(m_iOffset + 16*1024);
+		io_uring_prep_read(sqe, m_iFD, m_sBuffer.data() + m_iOffset, m_sBuffer.size() - m_iOffset, -1);
 		io_uring_sqe_set_data(sqe, this);
 		io_uring_submit(&_pRing->m_sRing);
 	}
@@ -76,7 +79,7 @@ struct io_data_read:io_data
 	{	return m_iFD;
 	}
 	virtual std::size_t getOffset(void) override
-	{	return 0;
+	{	return m_iOffset;
 	}
 	virtual std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const , ::io_uring_cqe* const, bool)> getWrite(void) override
 	{	return nullptr;
