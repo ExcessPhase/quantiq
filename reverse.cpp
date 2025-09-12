@@ -1,12 +1,19 @@
-#include <liburing.h>
-#include <system_error>
 #include <cerrno>
+#include <cstring>
+#include <fcntl.h>
+#include <functional>
+#include <iostream>
+#include <liburing.h>
+#include <list>
+#include <memory>
 #include <new>
 #include <set>
-#include <memory>
-#include <liburing.h>
-#include <memory>
-#include <functional>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <system_error>
+#include <type_traits>
+
+
 namespace foelsche
 {
 namespace linux_ns
@@ -32,11 +39,6 @@ struct io_data:std::enable_shared_from_this<io_data>
 };
 }
 }
-#include <liburing.h>
-#include <system_error>
-#include <cerrno>
-#include <new>
-
 
 namespace foelsche
 {
@@ -116,12 +118,6 @@ struct io_uring_queue_init
 };
 }
 }
-#include <system_error>
-#include <cerrno>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
 
 namespace foelsche
 {
@@ -141,11 +137,6 @@ struct open
 };
 }
 }
-#include <memory>
-#include <fcntl.h>
-#include <functional>
-#include <iostream>
-#include <cstring>
 namespace foelsche
 {
 namespace reverse
@@ -252,11 +243,6 @@ void io_data::handleW(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _p
 std::size_t io_data::s_iNextId;
 }
 }
-#include <fcntl.h>
-#include <list>
-#include <type_traits>
-#include <iostream>
-
 
 namespace foelsche
 {
