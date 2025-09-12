@@ -7,7 +7,7 @@
 
 namespace foelsche
 {
-namespace linux
+namespace linux_ns
 {
 namespace
 {
@@ -39,16 +39,16 @@ struct io_data_read:io_data
 {	//const std::shared_ptr<io_data_created_buffer> m_sBuffer;
 	std::vector<char> m_sBuffer;
 	std::vector<char> m_sBuffer2;
-	std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const , ::io_uring_cqe* const)> m_sRead;
+	std::function<void(io_data&, foelsche::linux_ns::io_uring_queue_init*const , ::io_uring_cqe* const)> m_sRead;
 	const int m_iFD;
 	const std::size_t m_iOffset;
 
 	io_data_read(
-		foelsche::linux::io_uring_queue_init *const _pRing,
+		foelsche::linux_ns::io_uring_queue_init *const _pRing,
 		int _iFD,
 		std::vector<char> &&_rBuffer,
 		std::vector<char> &&_rBuffer2,
-		std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const , ::io_uring_cqe* const)>&&_rRead
+		std::function<void(io_data&, foelsche::linux_ns::io_uring_queue_init*const , ::io_uring_cqe* const)>&&_rRead
 	)
 		://io_data(_rFD),
 		m_sBuffer(std::move(_rBuffer)),
@@ -81,10 +81,10 @@ struct io_data_read:io_data
 	virtual std::size_t getOffset(void) override
 	{	return m_iOffset;
 	}
-	virtual std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const , ::io_uring_cqe* const, bool)> getWrite(void) override
+	virtual std::function<void(io_data&, foelsche::linux_ns::io_uring_queue_init*const , ::io_uring_cqe* const, bool)> getWrite(void) override
 	{	return nullptr;
 	}
-	virtual std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const , ::io_uring_cqe* const)> getRead(void) override
+	virtual std::function<void(io_data&, foelsche::linux_ns::io_uring_queue_init*const , ::io_uring_cqe* const)> getRead(void) override
 	{	return std::move(m_sRead);
 	}
 	static void* operator new(std::size_t size);
@@ -101,15 +101,15 @@ struct io_data_write:io_data
 {	std::vector<char> m_sBuffer;
 	std::vector<char> m_sBuffer2;
 	const std::size_t m_iOffset;
-	std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const , ::io_uring_cqe* const, bool)> m_sWrite;
+	std::function<void(io_data&, foelsche::linux_ns::io_uring_queue_init*const , ::io_uring_cqe* const, bool)> m_sWrite;
 	const int m_iFD;
 	io_data_write(
-		foelsche::linux::io_uring_queue_init *const _pRing,
+		foelsche::linux_ns::io_uring_queue_init *const _pRing,
 		int _iFD,
 		std::vector<char> &&_rBuffer,
 		std::vector<char> &&_rBuffer2,
 		std::size_t _iOffset,
-		std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const , ::io_uring_cqe* const, bool)>&&_rWrite
+		std::function<void(io_data&, foelsche::linux_ns::io_uring_queue_init*const , ::io_uring_cqe* const, bool)>&&_rWrite
 	)
 		:
 		m_sBuffer(std::move(_rBuffer)),
@@ -145,10 +145,10 @@ struct io_data_write:io_data
 	virtual std::size_t getOffset(void) override
 	{	return 0;
 	}
-	virtual std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const , ::io_uring_cqe* const, bool)> getWrite(void) override
+	virtual std::function<void(io_data&, foelsche::linux_ns::io_uring_queue_init*const , ::io_uring_cqe* const, bool)> getWrite(void) override
 	{	return std::move(m_sWrite);
 	}
-	virtual std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const , ::io_uring_cqe* const)> getRead(void) override
+	virtual std::function<void(io_data&, foelsche::linux_ns::io_uring_queue_init*const , ::io_uring_cqe* const)> getRead(void) override
 	{	return nullptr;
 	}
 	static void* operator new(std::size_t size);
@@ -166,7 +166,7 @@ std::shared_ptr<io_data> io_uring_queue_init::createRead(
 	int _iFD,
 	std::vector<char> &&_rBuffer,
 	std::vector<char> &&_rBuffer2,
-	std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const , ::io_uring_cqe* const)>&&_rRead
+	std::function<void(io_data&, foelsche::linux_ns::io_uring_queue_init*const , ::io_uring_cqe* const)>&&_rRead
 )
 {	return *m_sIoData.insert(
 		std::make_shared<io_data_read>(this, _iFD, std::move(_rBuffer), std::move(_rBuffer2), std::move(_rRead)).get()->shared_from_this()
@@ -177,7 +177,7 @@ std::shared_ptr<io_data> io_uring_queue_init::createWrite(
 	std::vector<char> &&_rBuffer,
 	std::vector<char> &&_rBuffer2,
 	std::size_t _iOffset,
-	std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const , ::io_uring_cqe* const, bool)>&&_rWrite
+	std::function<void(io_data&, foelsche::linux_ns::io_uring_queue_init*const , ::io_uring_cqe* const, bool)>&&_rWrite
 )
 {	return *m_sIoData.insert(
 		std::make_shared<io_data_write>(this, _iFD, std::move(_rBuffer), std::move(_rBuffer2), _iOffset, std::move(_rWrite)).get()->shared_from_this()

@@ -4,7 +4,7 @@
 
 namespace foelsche
 {
-namespace linux
+namespace linux_ns
 {
 void io_data::handleW(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE)
 {		/// calling the handler

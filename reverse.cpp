@@ -10,7 +10,7 @@ namespace foelsche
 {
 namespace reverse
 {
-using namespace foelsche::linux;
+using namespace foelsche::linux_ns;
 	/// the event loop
 	/// blocking
 	/// only serves maximally 8 events
@@ -28,21 +28,21 @@ static void event_loop(io_uring_queue_init* const ring)
 }
 }
 int main(int, char**argv)
-{	using namespace foelsche::linux;
+{	using namespace foelsche::linux_ns;
 	using namespace foelsche::reverse;
 
 	constexpr int QUEUE_DEPTH = 256;
 	constexpr int PORT = 8080;
 		/// RAII initialize and destroy a uring structre
-	foelsche::linux::io_uring_queue_init sRing(QUEUE_DEPTH, 0);
+	foelsche::linux_ns::io_uring_queue_init sRing(QUEUE_DEPTH, 0);
 		/// RAII initialize and destroy a socket
-	foelsche::linux::open sRead(argv[1], O_RDONLY);
+	foelsche::linux_ns::open sRead(argv[1], O_RDONLY);
 	fcntl(sRead.m_i, F_SETFL, fcntl(sRead.m_i, F_GETFL, 0) | O_NONBLOCK);
-	foelsche::linux::open sWrite(argv[2], O_WRONLY | O_CREAT | O_TRUNC, 00600);
+	foelsche::linux_ns::open sWrite(argv[2], O_WRONLY | O_CREAT | O_TRUNC, 00600);
 	fcntl(sWrite.m_i, F_SETFL, fcntl(sWrite.m_i, F_GETFL, 0) | O_NONBLOCK);
 	std::vector<char> sLeftOver, sBuffer;
-	std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const, ::io_uring_cqe* const)> sReadF;
-	const std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const, ::io_uring_cqe* const, bool)> sWriteF = [&](io_data&_r, foelsche::linux::io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE, bool)
+	std::function<void(io_data&, foelsche::linux_ns::io_uring_queue_init*const, ::io_uring_cqe* const)> sReadF;
+	const std::function<void(io_data&, foelsche::linux_ns::io_uring_queue_init*const, ::io_uring_cqe* const, bool)> sWriteF = [&](io_data&_r, foelsche::linux_ns::io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE, bool)
 	{	if (_r.getOffset() + _pCQE->res < _r.getBuffer().size())
 			_pRing->createWrite(
 				sWrite.m_i,
@@ -50,17 +50,17 @@ int main(int, char**argv)
 				std::move(_r.getBuffer2()),
 				_r.getOffset() + _pCQE->res,
 				//_r.getWrite()
-				std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const, ::io_uring_cqe* const, bool)>(sWriteF)
+				std::function<void(io_data&, foelsche::linux_ns::io_uring_queue_init*const, ::io_uring_cqe* const, bool)>(sWriteF)
 			);
 		else
 			_pRing->createRead(
 				sRead.m_i,
 				std::move(_r.getBuffer2()),
 				std::move(_r.getBuffer()),
-				std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const, ::io_uring_cqe* const)>(sReadF)
+				std::function<void(io_data&, foelsche::linux_ns::io_uring_queue_init*const, ::io_uring_cqe* const)>(sReadF)
 			);
 	};
-	sReadF = [&](io_data&_r, foelsche::linux::io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE)
+	sReadF = [&](io_data&_r, foelsche::linux_ns::io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE)
 	{	if (!_pCQE->res)
 			return;
 		_r.getBuffer().resize(_r.getOffset() + _pCQE->res);
@@ -77,7 +77,7 @@ int main(int, char**argv)
 			std::move(_r.getBuffer()),
 			std::move(_r.getBuffer2()),
 			0,
-			std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const, ::io_uring_cqe* const, bool)>(sWriteF)
+			std::function<void(io_data&, foelsche::linux_ns::io_uring_queue_init*const, ::io_uring_cqe* const, bool)>(sWriteF)
 		);
 	};
 	
@@ -85,7 +85,7 @@ int main(int, char**argv)
 		sRead.m_i,
 		std::move(sLeftOver),
 		std::move(sBuffer),
-		std::function<void(io_data&, foelsche::linux::io_uring_queue_init*const, ::io_uring_cqe* const)>(sReadF)
+		std::function<void(io_data&, foelsche::linux_ns::io_uring_queue_init*const, ::io_uring_cqe* const)>(sReadF)
 	);
 		/// call the event loop
 	event_loop(&sRing);
