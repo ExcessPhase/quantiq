@@ -327,7 +327,7 @@ std::shared_ptr<io_data> io_uring_queue_init::createRead(
 	std::vector<char> &&_rBuffer2
 )
 {	return *m_sIoData.insert(
-		std::make_shared<io_data_read>(this, _iFD, _iWrite, std::move(_rBuffer), std::move(_rBuffer2)).get()->shared_from_this()
+		std::make_shared<io_data_read>(this, _iFD, _iWrite, std::move(_rBuffer), std::move(_rBuffer2))
 	).first;
 }
 std::shared_ptr<io_data> io_uring_queue_init::createWrite(
@@ -338,7 +338,7 @@ std::shared_ptr<io_data> io_uring_queue_init::createWrite(
 	std::size_t _iOffset
 )
 {	return *m_sIoData.insert(
-		std::make_shared<io_data_write>(this, _iFD, _iRead, std::move(_rBuffer), std::move(_rBuffer2), _iOffset).get()->shared_from_this()
+		std::make_shared<io_data_write>(this, _iFD, _iRead, std::move(_rBuffer), std::move(_rBuffer2), _iOffset)
 	).first;
 }
 }
