@@ -167,9 +167,14 @@ static void event_loop(io_uring_queue_init* const ring)
 }
 }
 }
-int main(int, char**argv)
+int main(int argc, char**argv)
 {	using namespace foelsche::linux_ns;
 	using namespace foelsche::reverse;
+
+	if (argc != 3)
+	{	std::cerr << argv[0] << ": usage: " << argv[0] << " inputFileName outputFileName" << std::endl;
+		return 1;
+	}
 
 	constexpr int QUEUE_DEPTH = 256;
 	constexpr int PORT = 8080;
