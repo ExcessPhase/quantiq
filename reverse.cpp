@@ -29,13 +29,7 @@ struct io_data:std::enable_shared_from_this<io_data>
 	virtual void handle(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE) = 0;
 	void handleW(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE);
 };
-}
-}
 
-namespace foelsche
-{
-namespace linux_ns
-{
 	/// an RAII wrapper for the uring call of the same name
 struct io_uring_wait_cqe
 {	struct ::io_uring *const m_pRing;
@@ -56,14 +50,8 @@ struct io_uring_wait_cqe
 	{	::io_uring_cqe_seen(m_pRing, m_pCQE);
 	}
 };
-}
-}
 
 
-namespace foelsche
-{
-namespace linux_ns
-{
 struct io_data;
 	/// a RAII wrapper for the ioring call of the same name
 struct io_uring_queue_init
@@ -108,13 +96,7 @@ struct io_uring_queue_init
 		std::size_t
 	);
 };
-}
-}
 
-namespace foelsche
-{
-namespace linux_ns
-{
 	/// an RAII wrapper for socket()/close()
 struct open
 {	const int m_i;
@@ -128,9 +110,6 @@ struct open
 	}
 };
 }
-}
-namespace foelsche
-{
 namespace reverse
 {
 using namespace foelsche::linux_ns;
@@ -188,13 +167,7 @@ void io_data::handleW(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _p
 		/// and removing the object from the set so that it can go away if not referenced by somebody else
 	_pRing->m_sIoData.erase(shared_from_this());
 }
-}
-}
 
-namespace foelsche
-{
-namespace linux_ns
-{
 namespace
 {
 template<typename T>
