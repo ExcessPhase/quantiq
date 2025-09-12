@@ -4,7 +4,7 @@
 #include <functional>
 namespace foelsche
 {
-namespace linux
+namespace linux_ns
 {
 struct io_uring_queue_init;
 	/// an abstract wrapper for any resources created

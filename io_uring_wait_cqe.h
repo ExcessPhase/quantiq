@@ -7,7 +7,7 @@
 
 namespace foelsche
 {
-namespace linux
+namespace linux_ns
 {
 	/// an RAII wrapper for the uring call of the same name
 struct io_uring_wait_cqe

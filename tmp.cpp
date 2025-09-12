@@ -1,6 +1,146 @@
-#include "io_uring_queue_init.h"
-#include "io_uring_wait_cqe.h"
-#include "open.h"
+#include <liburing.h>
+#include <system_error>
+#include <cerrno>
+#include <new>
+#include <set>
+#include <memory>
+#include <liburing.h>
+#include <memory>
+#include <functional>
+namespace foelsche
+{
+namespace linux_ns
+{
+struct io_uring_queue_init;
+	/// an abstract wrapper for any resources created
+	/// pointed to by a stdLLshared_ptr
+	/// the C++ base type of a request
+struct io_data:std::enable_shared_from_this<io_data>
+{	//const std::shared_ptr<io_data_created> m_sData;
+	static std::size_t s_iNextId;
+	const std::size_t m_iId = s_iNextId++;
+	io_data(void) = default;
+	virtual ~io_data(void) = default;
+	virtual void handle(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE) = 0;
+	void handleW(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE);
+	virtual std::vector<char> &getBuffer(void) = 0;
+	virtual std::vector<char> &getBuffer2(void) = 0;
+	virtual int getFD(void) = 0;
+	virtual std::size_t getOffset(void) = 0;
+	virtual std::function<void(io_data&, io_uring_queue_init*const , ::io_uring_cqe* const, bool)> getWrite(void) = 0;
+	virtual std::function<void(io_data&, io_uring_queue_init*const , ::io_uring_cqe* const)> getRead(void) = 0;
+};
+}
+}
+#include <liburing.h>
+#include <system_error>
+#include <cerrno>
+#include <new>
+
+
+namespace foelsche
+{
+namespace linux_ns
+{
+	/// an RAII wrapper for the uring call of the same name
+struct io_uring_wait_cqe
+{	struct ::io_uring *const m_pRing;
+	::io_uring_cqe *const m_pCQE;
+	static ::io_uring_cqe *getCQE(struct ::io_uring *const _p)
+	{	::io_uring_cqe *pCQE;
+		const auto i = ::io_uring_wait_cqe(_p, &pCQE);
+		if (i < 0)
+			throw std::system_error(std::error_code(-i, std::generic_category()), "io_uring_wait_cqe() failed!");
+		return pCQE;
+	}
+	io_uring_wait_cqe(struct ::io_uring *const _p)
+		:m_pRing(_p),
+		m_pCQE(getCQE(_p))
+	{
+	}
+	~io_uring_wait_cqe(void)
+	{	::io_uring_cqe_seen(m_pRing, m_pCQE);
+	}
+};
+}
+}
+
+
+namespace foelsche
+{
+namespace linux_ns
+{
+struct io_data;
+	/// a RAII wrapper for the ioring call of the same name
+struct io_uring_queue_init
+{	std::set<std::shared_ptr<io_data> > m_sIoData;
+	struct io_uring m_sRing;
+	io_uring_queue_init(const unsigned entries, const unsigned flags)
+	{	const int i = ::io_uring_queue_init(entries, &m_sRing, flags);
+		if (i < 0)
+			throw std::system_error(std::error_code(-i, std::generic_category()), "io_uring_queue_init() failed!");
+	}
+	~io_uring_queue_init(void)
+	{	for (const auto &pFirst : m_sIoData)
+		{	const auto pSQE = io_uring_get_sqe(&m_sRing);
+			io_uring_prep_cancel(pSQE, reinterpret_cast<void*>(pFirst.get()), 0);
+			io_uring_submit(&m_sRing);
+		}
+		for (std::size_t i = 0, iMax = m_sIoData.size()*2; i < iMax; ++i)
+		{	linux_ns::io_uring_wait_cqe s(&m_sRing);
+		}
+		while (!m_sIoData.empty())
+			m_sIoData.erase(m_sIoData.begin());
+		io_uring_queue_exit(&m_sRing);
+	}
+	static struct io_uring_sqe *io_uring_get_sqe(struct io_uring *const ring)
+	{	if (const auto p = ::io_uring_get_sqe(ring))
+			return p;
+		else
+			throw std::bad_alloc();
+	}
+		/// factory methods for io-requests
+	std::shared_ptr<io_data> createRead(
+		int _iFD,
+		std::vector<char> &&_rBuffer,
+		std::vector<char> &&_rBuffer2,
+		std::function<void(io_data&, io_uring_queue_init*const , ::io_uring_cqe* const)>&&_rRead
+	);
+	std::shared_ptr<io_data> createWrite(
+		int _iFD,
+		std::vector<char> &&_rBuffer,
+		std::vector<char> &&_rBuffer2,
+		std::size_t,
+		std::function<void(io_data&, io_uring_queue_init*const , ::io_uring_cqe* const, bool)>&&_rWrite
+	);
+};
+}
+}
+#include <system_error>
+#include <cerrno>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+
+namespace foelsche
+{
+namespace linux_ns
+{
+	/// an RAII wrapper for socket()/close()
+struct open
+{	const int m_i;
+	open(const char*const _pFileName, const int _iFlags, const int _iPerm = 0)
+		:m_i(::open(_pFileName, _iFlags, _iPerm))
+	{	if (m_i == -1)
+			throw std::system_error(std::error_code(errno, std::generic_category()), "open() failed!");
+	}
+	~open(void)
+	{	close(m_i);
+	}
+};
+}
+}
 #include <memory>
 #include <fcntl.h>
 #include <functional>
@@ -90,10 +230,6 @@ int main(int, char**argv)
 		/// call the event loop
 	event_loop(&sRing);
 }
-#include "io_data.h"
-#include "io_uring_queue_init.h"
-
-
 namespace foelsche
 {
 namespace linux_ns
@@ -107,7 +243,6 @@ void io_data::handleW(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _p
 std::size_t io_data::s_iNextId;
 }
 }
-#include "io_uring_queue_init.h"
 #include <fcntl.h>
 #include <list>
 #include <type_traits>

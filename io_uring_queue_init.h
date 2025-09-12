@@ -11,7 +11,7 @@
 
 namespace foelsche
 {
-namespace linux
+namespace linux_ns
 {
 struct io_data;
 	/// a RAII wrapper for the ioring call of the same name
@@ -30,7 +30,7 @@ struct io_uring_queue_init
 			io_uring_submit(&m_sRing);
 		}
 		for (std::size_t i = 0, iMax = m_sIoData.size()*2; i < iMax; ++i)
-		{	linux::io_uring_wait_cqe s(&m_sRing);
+		{	linux_ns::io_uring_wait_cqe s(&m_sRing);
 		}
 		while (!m_sIoData.empty())
 			m_sIoData.erase(m_sIoData.begin());

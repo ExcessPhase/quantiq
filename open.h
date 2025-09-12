@@ -8,7 +8,7 @@
 
 namespace foelsche
 {
-namespace linux
+namespace linux_ns
 {
 	/// an RAII wrapper for socket()/close()
 struct open
