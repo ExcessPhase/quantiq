@@ -24,8 +24,6 @@ struct io_uring_queue_init;
 	/// the C++ base type of a request
 struct io_data:std::enable_shared_from_this<io_data>
 {	//const std::shared_ptr<io_data_created> m_sData;
-	static std::size_t s_iNextId;
-	const std::size_t m_iId = s_iNextId++;
 	io_data(void) = default;
 	virtual ~io_data(void) = default;
 	virtual void handle(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE) = 0;
@@ -190,7 +188,6 @@ void io_data::handleW(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _p
 		/// and removing the object from the set so that it can go away if not referenced by somebody else
 	_pRing->m_sIoData.erase(shared_from_this());
 }
-std::size_t io_data::s_iNextId;
 }
 }
 
