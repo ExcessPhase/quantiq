@@ -18,7 +18,6 @@ struct io_data:std::enable_shared_from_this<io_data>
 	virtual ~io_data(void) = default;
 	virtual void handle(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE) = 0;
 	void handleW(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE);
-	static constexpr const std::size_t BUFFER_SIZE = 16384;
 	virtual std::vector<char> &getBuffer(void) = 0;
 	virtual std::vector<char> &getBuffer2(void) = 0;
 	virtual int getFD(void) = 0;

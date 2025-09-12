@@ -11,7 +11,6 @@ namespace foelsche
 namespace reverse
 {
 using namespace foelsche::linux;
-static constexpr const std::size_t BUFFER_SIZE = 16384;
 	/// the event loop
 	/// blocking
 	/// only serves maximally 8 events
