@@ -206,7 +206,7 @@ int main(int argc, char**argv)
 			);
 	};
 	sReadF = [&](io_data&_r, foelsche::linux_ns::io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE)
-	{	if (!_pCQE->res)
+	{	if (!_pCQE->res && !_r.getOffset())
 			return;
 		_r.getBuffer().resize(_r.getOffset() + _pCQE->res);
 		auto p = _r.getBuffer().begin(), pEnd = _r.getBuffer().end(), pLast = p;
@@ -215,6 +215,10 @@ int main(int argc, char**argv)
 			{	std::reverse(pLast, p);
 				pLast = p + 1;
 			}
+		if (!_pCQE->res && pLast != pEnd)
+		{	std::reverse(pLast, pEnd);
+			pLast = pEnd;
+		}
 		_r.getBuffer2().assign(pLast, pEnd);
 		_r.getBuffer().resize(pLast - _r.getBuffer().begin());
 		_pRing->createWrite(
